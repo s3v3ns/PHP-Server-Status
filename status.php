@@ -1,21 +1,4 @@
 <?php
-/**
- * _DISABLED = 0
- * _NONE = 1
- * _ACTIVE = 2
- */
-if (session_status() == PHP_SESSION_NONE) {
-    session_start();
-}
-
-if(!isset($_SESSION['isLoggedIn'])) {
-    header('Location: ../../admin.php?id=2');
-}
-
-if (!isset($_SESSION['isAdminLoggedIn'])) {
-    die($_SESSION['user_name'] . ', Du hast keine Berechtigung für diese Seite!');
-}
-
 /* ---------------------------------------------------- */
 /* PHP Server Status v1.0
 /*
@@ -23,13 +6,14 @@ if (!isset($_SESSION['isAdminLoggedIn'])) {
 /* Email: root@itburgas.com
 /* Date: 2015-08-23
 /* Author: Ivan Bachvarov a.k.a SlaSerX
+/* Edited by: Sven Mielke PHP7+ ready
 /* ---------------------------------------------------- */
 
 error_reporting(0);
 @header("content-Type: text/html; charset=utf-8");
 ob_start();
 
-$title = "PHP Server Status";
+$title = "Server Status";
 $version = "v0.4.7";
 
 define('HTTP_HOST', preg_replace('~^www\.~i', '', $_SERVER['HTTP_HOST']));
@@ -226,7 +210,7 @@ else
 function isfun($funName = '')
 {
     if (!$funName || trim($funName) == '' || preg_match('~[^a-z0-9\_]+~i', $funName, $tmp)) return 'й”™иЇЇ';
-    return (false !== function_exists($funName)) ? '<font color="green">ON</font>' : '<font color="red">OFF</font>';
+    return (false !== function_exists($funName)) ? '<span style="color: green;">ON</span>' : '<span style="color: red;">OFF</span>';
 }
 function isfun1($funName = '')
 {
@@ -647,7 +631,7 @@ if ($_GET['act'] == "rt")
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
-    <title><?php echo $title.$version; ?></title>
+    <title><?php echo $title . ' ' . $version; ?></title>
     <meta http-equiv="X-UA-Compatible" content="IE=EmulateIE7" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <!-- Powered by: Yahei.Net -->
@@ -790,7 +774,7 @@ if ($_GET['act'] == "rt")
 
     <table>
         <tr>
-            <th class="w_logo">PHP Server Status</th>
+            <th class="w_logo"><?= $title ?></th>
             <th class="w_top"><a href="#w_php">PHP</a></th>
             <th class="w_top"><a href="#w_module">Module</a></th>
             <th class="w_top"><a href="#w_module_other">Other</a></th>
@@ -1066,32 +1050,32 @@ foreach ($able as $key=>$value) {
             <td><?php echo show("register_argc_argv");?></td>
         </tr>
         <tr>
-            <td>Cookieпјљ</td>
+            <td>Cookie</td>
             <td><?php echo isset($_COOKIE)?'<font color="green">ON</font>' : '<font color="red">OFF</font>';?></td>
             <td>Spell check(ASpell Library): </td>
             <td><?php echo isfun("aspell_check_raw");?></td>
         </tr>
         <tr>
-            <td>High-precision math(BCMath)пјљ</td>
+            <td>High-precision math(BCMath)</td>
             <td><?php echo isfun("bcadd");?></td>
-            <td>PREL(PCRE)пјљ</td>
+            <td>PREL(PCRE)</td>
             <td><?php echo isfun("preg_match");?></td>
         <tr>
-            <td>PDFпјљ</td>
+            <td>PDF</td>
             <td><?php echo isfun("pdf_close");?></td>
-            <td>SNMPпјљ</td>
+            <td>SNMP</td>
             <td><?php echo isfun("snmpget");?></td>
         </tr>
         <tr>
-            <td>VMailMgrпјљ</td>
+            <td>VMailMgr</td>
             <td><?php echo isfun("vm_adduser");?></td>
-            <td>Curlпјљ</td>
+            <td>Curl</td>
             <td><?php echo isfun("curl_init");?></td>
         </tr>
         <tr>
-            <td>SMTPпјљ</td>
+            <td>SMTP</td>
             <td><?php echo get_cfg_var("SMTP")?'<font color="green">ON</font>' : '<font color="red">OFF</font>';?></td>
-            <td>SMTPпјљ</td>
+            <td>SMTP</td>
             <td><?php echo get_cfg_var("SMTP")?get_cfg_var("SMTP"):'<font color="red">OFF</font>';?></td>
         </tr>
         <tr>
@@ -1152,7 +1136,7 @@ foreach ($able as $key=>$value) {
             <td>GD Library: </td>
             <td>
                 <?php
-                if(function_exists(gd_info)) {
+                if(function_exists('gd_info')) {
                     $gd_info = @gd_info();
                     echo $gd_info["GD Version"];
                 }else{echo '<font color="red">OFF</font>';}
@@ -1186,7 +1170,7 @@ foreach ($able as $key=>$value) {
         </tr>
         <tr>
             <td>MCrypt: </td>
-            <td><?php echo isfun("mcrypt_cbc");?></td>
+            <td><?php /*echo isfun("mcrypt");*/ echo '--'; ?></td>
             <td>Mhash Count: </td>
             <td><?php echo isfun("mhash_count");?></td>
         </tr>
@@ -1235,13 +1219,15 @@ foreach ($able as $key=>$value) {
         <tr><th colspan="4">Database</th></tr>
         <tr>
             <td width="32%">MySQL: </td>
-            <td width="18%"><?php echo isfun("mysql_close");?>
+            <td width="18%"><?php echo isfun("mysqli_close");?>
                 <?php
-                if(function_exists("mysql_get_server_info")) {
-                    $s = @mysql_get_server_info();
-                    $s = $s ? '&nbsp; mysql_server version: '.$s : '';
-                    $c = '&nbsp; mysql_client version: '.@mysql_get_client_info();
+                if(function_exists("mysqli_get_host_info")) {
+                    $link = mysqli_connect("localhost", "", "", "");
+                    $s = mysqli_get_host_info($link);
+                    $s = $s ? 'mysql_server version: '.$s : '';
+                    $c = '&nbsp; mysql_client version: ' . mysqli_get_client_info();
                     echo $s;
+                    mysqli_close($link);
                 }
                 ?>
             </td>
@@ -1252,7 +1238,7 @@ foreach ($able as $key=>$value) {
             <td>Oracle: </td>
             <td><?php echo isfun("ora_close");?></td>
             <td>SQL Server: </td>
-            <td><?php echo isfun("mssql_close");?></td>
+            <td><?php echo isfun("sqlsrv_close");?></td>
         </tr>
         <tr>
             <td>dBASE: </td>
@@ -1262,7 +1248,7 @@ foreach ($able as $key=>$value) {
         </tr>
         <tr>
             <td>SQLite: </td>
-            <td><?php if(extension_loaded('sqlite3')) {$sqliteVer = SQLite3::version();echo '<font color=green>ON</font>';echo "SQLite3 Ver ";echo $sqliteVer[versionString];}else {echo isfun("sqlite_close");if(isfun("sqlite_close") == '<font color="green">ON</font>') {echo "&nbsp;пјљ ".@sqlite_libversion();}}?></td>
+            <td><?php if(extension_loaded('sqlite3')) {$sqliteVer = SQLite3::version();echo ' <font color=green>ON</font>';echo " SQLite3 Ver ";echo $sqliteVer[versionString];}else {echo isfun("sqlite_close");if(isfun("sqlite_close") == '<font color="green">ON</font>') {echo "&nbsp; ".@sqlite_libversion();}}?></td>
             <td>Hyperwave: </td>
             <td><?php echo isfun("hw_close");?></td>
         </tr>
@@ -1279,9 +1265,9 @@ foreach ($able as $key=>$value) {
             <td><?php echo isfun("dbmclose");?></td>
         </tr>
         <tr>
-            <td>FilePro databaseпјљ</td>
+            <td>FilePro database</td>
             <td><?php echo isfun("filepro_fieldcount");?></td>
-            <td>SyBase databaseпјљ</td>
+            <td>SyBase database</td>
             <td><?php echo isfun("sybase_close");?></td>
         </tr>
     </table>
